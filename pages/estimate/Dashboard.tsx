@@ -112,9 +112,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, lang }) => {
         <div className="glass-panel bg-white/50 dark:bg-slate-900/60 p-6 rounded-lg flex flex-col justify-between shadow-lg">
            <h4 className="text-amber-600 dark:text-amber-500 font-bold uppercase text-xs mb-4">System Notifications</h4>
            <div className="text-sm text-slate-500 dark:text-slate-400">
-             <p className="mb-2"> > Database backup completed at 04:00.</p>
-             <p className="mb-2"> > New rate schedule imported from LGED.</p>
-             <p className="mb-2"> > Server Load: 12% (Nominal)</p>
+             <p className="mb-2">&gt; Database backup completed at 04:00.</p>
+<p className="mb-2">&gt; New rate schedule imported from LGED.</p>
+<p className="mb-2">&gt; Server Load: 12% (Nominal)</p>
+
            </div>
            <button className="mt-4 w-full py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-white uppercase font-bold rounded transition-colors">View Audit Log</button>
         </div>
