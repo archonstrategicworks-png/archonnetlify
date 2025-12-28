@@ -1,4 +1,4 @@
-name: Unzip ZIP in repo
+name: Unzip ZIP in repo (diagnostic + commit)
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         default: "yourfile.zip"
       dest_dir:
-        description: "Destination directory to extract into (e.g., extracted/ or .)"
+        description: "Destination directory to extract into"
         required: true
         default: "extracted"
       remove_zip:
@@ -23,17 +23,35 @@ jobs:
   unzip:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (with LFS)
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
-      - name: Verify ZIP exists
+      - name: Ensure unzip + file tools exist
         run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip file
+
+      - name: Inspect target file
+        run: |
+          set -e
+          echo "ZIP path: ${{ inputs.zip_path }}"
+          ls -la "$(dirname "${{ inputs.zip_path }}")" || true
           if [ ! -f "${{ inputs.zip_path }}" ]; then
-            echo "ZIP not found at: ${{ inputs.zip_path }}"
-            echo "Repo root files:"
-            ls -la
+            echo "ERROR: ZIP not found at ${{ inputs.zip_path }}"
             exit 1
           fi
+          echo "File type:"
+          file "${{ inputs.zip_path }}" || true
+          echo "First 5 lines (helps detect Git LFS pointer files):"
+          head -n 5 "${{ inputs.zip_path }}" || true
+          echo "File size (bytes):"
+          wc -c "${{ inputs.zip_path }}" || true
+
+      - name: Test ZIP integrity
+        run: |
+          unzip -t "${{ inputs.zip_path }}"
 
       - name: Extract ZIP
         run: |
@@ -42,16 +60,12 @@ jobs:
 
       - name: Optionally remove ZIP
         if: ${{ inputs.remove_zip == 'true' }}
-        run: |
-          rm -f "${{ inputs.zip_path }}"
+        run: rm -f "${{ inputs.zip_path }}"
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add -A
-          git status
-
-          git commit -m "Unzip ${{ inputs.zip_path }} to ${{ inputs.dest_dir }}" || echo "Nothing to commit"
+          git commit -m "Unzip ${{ inputs.zip_path }} -> ${{ inputs.dest_dir }}" || echo "Nothing to commit"
           git push
