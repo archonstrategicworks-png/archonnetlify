@@ -1,0 +1,58 @@
+name: Move folder contents to repo root
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_dir:
+        description: "Folder whose contents will be moved to repo root (e.g., uploads)"
+        required: true
+        default: "uploads"
+      remove_source_dir:
+        description: "Remove the source folder if empty after move? (true/false)"
+        required: true
+        default: "true"
+
+permissions:
+  contents: write
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Move contents to root
+        run: |
+          set -e
+          SRC="${{ inputs.source_dir }}"
+
+          if [ ! -d "$SRC" ]; then
+            echo "ERROR: source_dir does not exist: $SRC"
+            ls -la
+            exit 1
+          fi
+
+          # include dotfiles in globs
+          shopt -s dotglob nullglob
+
+          # fail early if empty
+          if [ -z "$(ls -A "$SRC")" ]; then
+            echo "ERROR: source_dir is empty: $SRC"
+            exit 1
+          fi
+
+          # move everything (files + subfolders) to repo root
+          git mv "$SRC"/* .
+
+          if [ "${{ inputs.remove_source_dir }}" = "true" ]; then
+            rmdir "$SRC" 2>/dev/null || true
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Move ${{ inputs.source_dir }} contents to root" || echo "Nothing to commit"
+          git push
