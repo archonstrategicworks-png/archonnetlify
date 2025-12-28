@@ -1,0 +1,7 @@
+{
+  "name": "Archon Strategic Works",
+  "description": "Defense-grade infrastructure estimation and management system featuring EstiMate™ technology.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
