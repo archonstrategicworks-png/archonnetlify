@@ -1,0 +1,57 @@
+name: Unzip ZIP in repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_path:
+        description: "Path to the ZIP file in the repo (e.g., uploads/myfile.zip)"
+        required: true
+        default: "yourfile.zip"
+      dest_dir:
+        description: "Destination directory to extract into (e.g., extracted/ or .)"
+        required: true
+        default: "extracted"
+      remove_zip:
+        description: "Remove the ZIP after extraction? (true/false)"
+        required: true
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify ZIP exists
+        run: |
+          if [ ! -f "${{ inputs.zip_path }}" ]; then
+            echo "ZIP not found at: ${{ inputs.zip_path }}"
+            echo "Repo root files:"
+            ls -la
+            exit 1
+          fi
+
+      - name: Extract ZIP
+        run: |
+          mkdir -p "${{ inputs.dest_dir }}"
+          unzip -o "${{ inputs.zip_path }}" -d "${{ inputs.dest_dir }}"
+
+      - name: Optionally remove ZIP
+        if: ${{ inputs.remove_zip == 'true' }}
+        run: |
+          rm -f "${{ inputs.zip_path }}"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git status
+
+          git commit -m "Unzip ${{ inputs.zip_path }} to ${{ inputs.dest_dir }}" || echo "Nothing to commit"
+          git push
